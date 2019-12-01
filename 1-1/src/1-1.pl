@@ -1,24 +1,17 @@
 (defun read-numbers ()
-	(progn
-		(let ((l ()))
-			(loop for i = (read *standard-input* nil :eof) 
-				until (eq i :eof)
-				do (progn
-					(push i l)
-				)
-			)
-			(return-from read-numbers l)
+	"Returns a list of numbers read from stdin"
+	(let ((l ())) ;list of variable/initial-value pairs
+		(loop for i = (read *standard-input* nil :eof)
+			until (eq i :eof)
+			do (push i l)
 		)
+		(return-from read-numbers l)
 	)
 )
 
 (defun write-numbers (container)
-	(progn
-		(loop for i in container
-			do (progn
-				(format t "~d~%" i)
-			)
-		)
+	(loop for i in container
+		do (format t "~d~%" i)
 	)
 )
 ;(write-numbers (read-numbers))

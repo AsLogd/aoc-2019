@@ -1,28 +1,34 @@
 (defun split-string (input separator)
+	"Returns a list of the substrings separated by 'separator' in 'input'"
 	(loop
 		for x from 0 below (length input)
 		with begin = 0
 		with end = (length input)
 		with res = ()
-		do (progn
-			(if (string= (char input x) ",")
-				(progn
-					(setq end x)
-					(setq res (cons (subseq input begin end) res) )
-					(setq begin (+ 1 x))
-					(setq end (length input))
-				)
+		do
+			; once we find a comma
+			(when (string= (char input x) separator)
+				; set current pos as the end of the current chunk
+				(setq end x)
+				; res is the current chunk
+				(setq res (cons (subseq input begin end) res) )
+				; the next chunk begins at x+1
+				(setq begin (+ 1 x))
+				; the chunk is assumed to be the rest of the string
+				; unless we find another comma
+				(setq end (length input))
 			)
-		)
 		finally (return (reverse (setq res (cons (subseq input begin end) res))))
 	)
 )
 
 (defun set-nth (list n val)
+	"Substitutes the 'n'th element in 'list' by 'val'"
 	(loop
 		for i from 0
 		for j in list
 		collect
+			; if we in n, take 'val' instead of old value
 			(if (= i n)
 				val
 				j
@@ -31,6 +37,7 @@
  )
 
 (defun read-memory ()
+	"Read the program memory in comma separated string format. Returns an int list"
 	(let ((in (read-line)))
 		(map 'list #'parse-integer (split-string in ","))
 	)
@@ -45,6 +52,7 @@
 )
 
 (defun execute-instr (at-op at-a at-b at-result memory)
+	"Returns the memory after executing the instruction beginning at at-op"
 	(let (
 		(op (nth at-op memory))
 		(a-ref (nth at-a memory))
@@ -68,15 +76,17 @@
 )
 
 (defun parse-instr (pc memory)
+	"Reads and executes the instruction at pc"
 	(execute-instr pc (+ 1 pc) (+ 2 pc) (+ 3 pc) memory)
 )
 
 (defun program-ends (pc memory)
+	"Checks if the program should continue"
 	(let (
 		(op (nth pc memory))
 	)
-		; if op is not an instruction
 		(if (not (find op '(1 2)))
+			; if op is not an instruction
 			(progn
 				; if other than 99 - error
 				(when (not (eq op 99))
@@ -96,6 +106,7 @@
 )
 
 (defun execute-program (memory)
+	"Executes the program in 'memory'"
 	(loop
 		for pc = 0 then (+ 4 pc)
 		do (setq memory (parse-instr pc memory))

@@ -65,26 +65,148 @@
 				:right (max (getf bounds-a :right)(getf bounds-b :right))
 		))
 		(let (
-			(width (+ (getf bounds-total :left) (getf bounds-total :right)))
-			(height (+ (getf bounds-total :up) (getf bounds-total :down)))
+			(width (+ 1 (+ (getf bounds-total :left) (getf bounds-total :right))))
+			(height (+ 1 (+ (getf bounds-total :up) (getf bounds-total :down))))
+			(src-y (getf bounds-total :up))
+			(src-x (getf bounds-total :left))
 		)
 			(let (
-				(grid (make-array '(width height) :initial-element nil)
+				(grid (list 
+					:src (make-pos src-x src-y) 
+					:content (make-array (list width height) :initial-element #\.)))
 			)
-				
+				(setf (aref (getf grid :content) src-x src-y) #\o)
+				(return-from create-grid grid)
 			)
 
 		)
 	)
 )
 
-#|
+(defun print-grid (grid)
+	(destructuring-bind (n m) (array-dimensions (getf grid :content))
+		(loop for i from 0 below n do
+			(loop for j from 0 below m do
+				(format t "~C" (aref grid i j))
+				finally (format t "~%"))))
+)
+
+(defun get-i-x (i x dir)
+	(case dir
+		(left (- x i))
+		(right (+ x i))
+		(otherwise x)
+	)
+)
+
+(defun get-i-y (i y dir)
+	(case dir
+		(up (- y i))
+		(down (+ y i))
+		(otherwise y)
+	)
+)
+
+(defun make-pos (x y)
+	(list :x x :y y)
+)
+
+(defun pos-distance (a b)
+	(make-pos 
+		(abs (- (getf a :x) (getf b :x)))
+		(abs (- (getf a :y) (getf b :y)))
+	)
+)
+
+(defun make-intersection (start pos)
+	(list
+		:pos pos
+		:distance (pos-distance start pos)
+	)
+)
+
+(defun add-segment (grid start segment)
+	(let 
+		(
+			(content (getf grid :content))
+			(dir (getf grid :dir))
+			(start-x (getf start :x))
+			(start-y (getf start :y))
+			(val (getf segment :val))
+		)
+		(let 
+			(
+				(pos (list start-x start-y))
+				(x start-x)
+				(y start-y)
+				(pos-ref ())
+				(intersections ())
+			)
+			(print "addsegmetn")
+
+			(loop for i from 1 upto val do 
+				(progn
+					(setq x (get-i-x i x dir))
+					(setq y (get-i-y i y dir))
+					(if (char= (aref content x y) #\-)
+						(progn
+							(setf (aref content x y) #\X)
+
+							(setq intersections 
+								(cons (make-intersection start pos) intersections)
+							)
+
+						)
+						(setf (aref content x y) #\-)
+					)
+				)
+				finally (return 
+					(list 
+						:pos (make-pos x y) 
+						:intersections intersections
+					)
+				)
+			)
+		)
+	)
+)
+
+(defun add-path (grid path)
+	(let 
+		(
+			(start (getf grid :src))
+			(result ())
+			(intersections ())
+		)
+		(print "add path")
+		(print path)
+		(loop for segment in path do 
+			(print segment)
+
+			(setq result (add-segment grid start segment))
+			
+			(setq start (getf result :pos))
+			(setq intersections (getf result :intersections))
+			finally (return intersections)
+		)
+	)
+)
+
 (defun closest-intersection (path-a path-b) 
 	(let (
 		(grid (create-grid path-a path-b))
+		(intersections ())
 	)
+		(print "ble")
+
+		(setq intersections (add-path grid path-a))
+		(print "Intersections A:")
+		(print intersections)
+		(setq intersections (add-path grid path-b))
+		(print "Intersections B:")
+		(print intersections)
 	)
-)|#
+)
 
 (defun get-dir (in)
 	(let (
@@ -101,8 +223,8 @@
 
 (defun create-segment (in)
 	(list
-		(get-dir (char in 0))
-		(parse-integer (subseq in 1))
+		:dir (get-dir (char in 0))
+		:val (parse-integer (subseq in 1))
 	)
 )
 
@@ -119,4 +241,4 @@
 )
 
 (defvar *paths* (read-paths))
-(print (create-grid (nth 0 *paths*) (nth 1 *paths*)))
+(closest-intersection (first *paths*) (second *paths*))
